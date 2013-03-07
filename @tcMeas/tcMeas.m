@@ -1,82 +1,88 @@
 classdef tcMeas < handle
-   
+   % Class definition where each object corresponds to a single
+   % measurement (time capture)
    
    % Properties to monitor:
    properties (SetObservable, AbortSet)
-      yUnit = 'Vfll'
-      filename
+      yUnit = 'Vfll' % y-unit of spectral density used when plotting
+      filename       % Filename of time capture header
    end
    
    % Properties that are set internally:
    properties (SetAccess = private)
-      % Variables for measured SQUID:
-      header
-      startTime
-      T           = NaN
-      fMax        = NaN
-      SQUID       = NaN
-      R           = NaN
-      Ic          = NaN
-      Ib          = NaN
-      dVFLLdPhiA  = NaN % dVFLL/dPhi in measuring SQUID
       
-      % Variables for measurement setup:
-      rfdbck      = NaN
-      rfdbckInd   = NaN
-      electronics = ''
+      % ----- Variables for measured SQUID -----
+      
+      header            % Cell with lines in header file
+      startTime         % Vector of measurement start time
+      T           = NaN % Temperature of measurement (K)
+      fMax        = NaN % Maximum frequency of measurement (Hz)
+      SQUID       = NaN % SQUID number (SQUID 0 = readout SQUID)
+      R           = NaN % Current injected across compensating resistor (A)
+      Ic          = NaN % Critical current of measured SQUID (A)
+      Ib          = NaN % Current injected across measured SQUID (A)
+      dVFLLdPhiA  = NaN % dVFLL/dPhi in readout SQUID (V/Phi_0)
+      
+      % ----- Variables for measurement setup -----
+      rfdbck      = NaN % Resistance of feedback resistor (ohm)
+      rfdbckInd   = NaN % Index of feedback resistor
+      electronics = ''  % String designating commercial FLL electronics
       
       
-      % Variables for the standard measurement:
-      flux        = NaN % flux through measured SQUID
-      vin         = NaN % vin measured from lock-in for dI/dPhi msrmnt
-      vout        = NaN % vout measured from lock-in for dI/dPhi msrmnt
-      dIdV_lockin = NaN % current into flux bias coil /
-      % voltage output from lock-in
-      dIidVFLL    = NaN % current in input coil / voltage in FLL
-      dIidPhiB    = NaN % for measured SQUID
-      dPhiBdVFLL  = NaN % Phi0 in measured SQUID / voltage in FLL
+      % ----- Variables for the standard measurement -----
       
-      % Variables for flux modulation
-      fluxModOn   = false
-      fMod        = NaN       % frequency of the flux modulation tone
-      dIdV_lockin_Mod = NaN   % Conversion from output voltage of the
-      %    modulation lock-in to a current
+      flux        = NaN % Flux through measured SQUID (Phi_0)
+      vin         = NaN % Vin measured from lock-in for dI/dPhi msrmnt (V)
+      vout        = NaN % Vout measured from lock-in for dI/dPhi msrmnt (V)
+      dIdV_lockin = NaN % I_{flux bias coil} / V_{output from lock-in} (A/V)
+      dIidVFLL    = NaN % I_{input coil} / V_FLL (A/V)
+      dIidPhiB    = NaN % I_{input coil} / Phi_{measured SQUID) (A/Phi_0)
+      dPhiBdVFLL  = NaN % Phi_{measured SQUID) / V_FLL (Phi_0/V)
+      
+      % ----- Variables for flux modulation -----
+      
+      fluxModOn   = false     % Is flux modulation on in measurement?
+      fMod        = NaN       % Frequency of the flux modulation tone (Hz)
+      % Conversion from output voltage of the modulation lock-in to a
+      % current
+      dIdV_lockin_Mod = NaN
       fluxModRMS  = NaN       % RMS magnitude of flux modulation (A)
-      Tconst      = NaN       % Time constant of filter on lock-in
-      Sensitivity = NaN       % Voltage scale sensitivity on lock-in
-      FullScaleVout = NaN     % Voltage output on lock-in when input is
-      %    equal to the maximum.
+      Tconst      = NaN       % Time constant of filter on lock-in (s)
+      Sensitivity = NaN       % Voltage scale sensitivity on lock-in (V/V)
+      % Voltage output on lock-in when input is equal to the maximum (V)
+      FullScaleVout = NaN
       
-      % Various other variables
-      measProf    % the struct containing the measurement profile
-      tcS         % the tcFFT object containing the spectrum and FFT
-      % parameters
-      sf          % the sFit object containing the fit of the spectrum
+      % ----- Various other variables -----
+      
+      measProf % Struct containing the measurement profile
+      tcS      % tcFFT object containing the spectrum and FFT parameters
+      sf       % sFit object containing the fit of the spectrum
    end
    
    % Aliased properties:
    properties (SetAccess = private, Dependent)
-      tc
-      s       % aliased to tcM.tcS.s
-      coeff   % aliased to tcM.sf.coeff
-      f0      % aliased to tcM.sf.f0
-      R2      % aliased to tcM.sf.R2
-      drift   % aliased to tcM.tcS.drift
-      runName % aliased to tcM.measProf.runName
-      totalTime   % alieased to tcM.tc.totalTime
+      tc       % Not aliased, creates a time capture object
+      s        % Aliased to tcM.tcS.s
+      coeff    % Aliased to tcM.sf.coeff
+      f0       % Aliased to tcM.sf.f0
+      R2       % Aliased to tcM.sf.R2
+      drift    % Aliased to tcM.tcS.drift
+      runName  % Aliased to tcM.measProf.runName
+      totalTime   % Aliased to tcM.tc.totalTime
       yConvFactor      % = dyUnit / dVfll
-      yUnitLabel
-      filenameTC
+      yUnitLabel  % Label (unit) of y-axis of spectral density
+      filenameTC  % Filename of time capture file
    end
    
    % Properties for internal use within the class methods:
    properties (Access = private)
-      updatedFit = false
+      updatedFit = false % Is the fit updated?
    end
    
    methods
       %% Class constructor:
       function tcM = tcMeas(filename)
+         % Create an object instance based on a filename         
          
          % Adds a listener to whether the filename has changed:
          addlistener(tcM, 'filename','PostSet',@tcM.fnChangedHandler);
@@ -234,14 +240,14 @@ classdef tcMeas < handle
       
       %% plot functions
       
-      % Plot the time capture:
       function varargout = plotTC(tcM,varargin)
+         % Plot the time capture
          h = plot(tcM.tc, varargin{:});
          if nargout == 1, varargout{1} = h; else varargout = {}; end
       end
       
-      % Plot the power spectrum:
       function varargout = plot(tcM, varargin)
+         % plot - Plot the power spectrum
          h = plot(tcM.tcS * tcM.yConvFactor^2,...
             varargin{:});
          if nargout == 1, varargout{1} = h; else varargout = {}; end
@@ -249,14 +255,15 @@ classdef tcMeas < handle
          ylabel(sprintf('S(f) [%s^2/Hz]',tcM.yUnitLabel))
       end
       
-      % Plot the power spectrum:
       function varargout = loglog(tcM,varargin)
+         % Plot the power spectrum
          h = plot(tcM, varargin{:}); % just calls overloaded plot fun.
          if nargout == 1, varargout{1} = h; else varargout = {}; end
       end
       
-      % Plot the power spectrum of the compensating resistor:
       function varargout = plotRc(tcM, varargin)
+         % Plot the theoretical power spectrum of the compensating resistor
+         
          % Nyquist current noise of compensating resistor:
          predS = (5.5226e-23 * tcM.T / tcM.measProf.Rc ) * ...
             tcM.yConvFactor^2 / tcM.dIidVFLL^2;
@@ -267,8 +274,9 @@ classdef tcMeas < handle
          if nargout == 1, varargout{1} = h; else varargout = {}; end
       end
       
-      % Plot the fft of the drift of the time capture:
       function varargout = plotDrift(tcM, varargin)
+         % Plot the fft of the drift of the time capture
+         
          h = loglog(tcM.tcS.s.f([2,end]), tcM.yConvFactor^2 * ...
             tcM.tcS.SDrift(tcM.tcS.s.f([2,end])), ...
             varargin{:});
@@ -285,11 +293,13 @@ classdef tcMeas < handle
       
       %% Overloaded functions:
       
-      % Add tcMeas, tcFFT, or spectrum objects together. Note that this is
-      % only really meaningful if the measurements are just repeated
-      % measurements of the same thing. What's returned is not a tcMeas
-      % object, but just the added spectrum:
       function s3 = plus(varargin)
+         % Add tcMeas, tcFFT, or spectrum objects together.
+         %
+         % Note that this is only really meaningful if the measurements are
+         % just repeated measurements of the same thing. What's returned is
+         % not a tcMeas object, but just the added spectrum:
+         
          % Create an empty spectrum:
          s12 = spectrum.empty(2,0);
          for i = 1:2
@@ -306,20 +316,21 @@ classdef tcMeas < handle
          s3 = s12(1) + s12(2);
       end
       
-      % Multiply tcM by a scalar x, which we interpret as multiplying the
-      % spectrum by a scalar:
       function s = mtimes(tcM, x)
+         % Multiply tcM by a scalar x. Returns spectrum object.
+         
          s = x * tcM.s; % mtimes is already overloaded for spectrum
       end
       
-      % Divide spectrum by a scalar x:
       function s = mrdivide(tcM, x)
+         % Divide spectrum by a scalar x. Returns spectrum object.
+         
          s = (1/x) * tcM.s; % mtimes is already overloaded for spectrum
       end
       
-      % Average input measurements. Uses the overloaded plus function,
-      % which automatically returns a spectrum.
       function s = mean(varargin)
+         % Calculate mean of input measurements. Returns spectrum object.
+         
          if length(varargin{1}) > 1
             spectra = num2cell(varargin{1});
          else
@@ -338,10 +349,12 @@ classdef tcMeas < handle
       
       %% Handler for a change in the filename:
       
-      % This function is called the first time the object is created
-      % (filename changes from nothing to something) or anytime the
-      % filename is subsequently changed.
       function fnChangedHandler(tcM,varargin)
+         % Function called whenever filename is changed.
+         % This function is called the first time the object is created
+         % (filename changes from nothing to something) or anytime the
+         % filename is subsequently changed.
+         
          % Create the tcFFT object associated with this tcMeas object:
          tcM.tcS = tcFFT(tcM.filenameTC);
          
@@ -592,9 +605,12 @@ classdef tcMeas < handle
       
       %% Parse the value plus units:
       
-      % Function interprets a string such as '4 uA' as a value '4e-6' and a
-      % unit A (amps). It's designed to handle strings such as '.4uA', too.
       function valuePlusUnit = parseValuePlusUnits(str)
+         % Function interprets a string '[Value]+[Unit]'
+         %
+         % For example, '4 uA' is read as a value '4e-6' and a unit A
+         % (amps). It's designed to handle strings such as '.4uA', too.
+         
          % If string is empty, there's no work to do:
          if isempty(str)
             valuePlusUnit = {NaN, []};
@@ -605,7 +621,7 @@ classdef tcMeas < handle
          % Add 0 in front of leading '.'
          %    (The string '.4' needs a zero in front of the period, but the
          %    string '10.4' obviously does not.)
-         str = regexprep(str,'(?<!\d)\.','0.'); 
+         str = regexprep(str,'(?<!\d)\.','0.');
          [valueStr unit] = regexp(str,'-?\d+\.?(\d+)?','match','split');
          if isempty(valueStr)
             value = NaN;

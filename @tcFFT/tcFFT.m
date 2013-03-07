@@ -1,43 +1,45 @@
 classdef tcFFT < handle
-    
-    properties (GetObservable)
-    end
+   % Class definition of a stitched FFT. 
     
     properties (SetAccess = private, GetObservable)
-        s         % spectrum object
-        drift     % scalar value of drift
-        SDrift    % function handle SDrift(f) is the spectral density of 
+        s         % A spectrum object
+        drift     % Scalar value of drift
+        SDrift    % Function handle SDrift(f) is the spectral density of 
                   % the drift
     end
     
     properties (SetAccess = private, Dependent)
-        f % frequency array,        aliased (to s)
-        S % spectral density array, aliased (to s)
+        f % Frequency array, aliased to s
+        S % Spectral density array, aliased to s
     end
     
     properties (SetObservable, AbortSet)
-        filename    % filename of the time capture
-        tMin = 0
-        tMax = inf
+        filename     % Filename of the time capture
+        tMin = 0     % Start time of good data, default = 0 (s)
+        tMax = inf   % Stop time of good data, default = inf (s)
         
-        autoStitch = true
-        minAvgs = 12 % minimum number of averages for lowest frequency FFT
-        sFactor = 2  % stitches FFTs every 2^sFactor in frequency
+        autoStitch = true % Autostitch FFT?
+        minAvgs = 12 % Minimum number of averages for lowest frequency FFT
+        sFactor = 2  % Stitches FFTs every 2^sFactor in frequency
         
+        % Default set of averages for each stitch region (if auto = off)
         avgs = [12 50 200 800 3200]
+        % Default set of stitch frequencies (if auto = off)
         fCuts = [0.5/16 0.125 0.5 8]
     end
     
     properties (Dependent = true)
-        tc  % time capture of filename
+        tc  % timeCapture object of filename
     end
     
     properties %(Access = private)
-        updated = false
+        updated = false % Is the FFT updated?
     end
     
     events
+       % Data or parameter change: FFT needs to be updated
         FFT_Needs_Update
+        % Dummy function to set tcS.updated = true
         FFT_Updated
     end
     

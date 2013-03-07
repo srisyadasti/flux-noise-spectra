@@ -1,31 +1,34 @@
 classdef timeCapture < handle
+    % Class definition of a time capture
     
     %% properties
     properties
-        filename
+        filename % Filename of time capture
     end
     
     properties (SetAccess = private)
-        dt
-        y
-        totalTime
-        drift
+        dt        % Time between samples in time series (s)
+        y         % y value of time series (assumed to be V)
+        totalTime % Total time of time series
+        drift     % Coefficient of linear regression of time series (V/hr)
     end
     
     properties (Access = private)
-        updated = false
-        updatedDrift = false
+        updated = false       % Is time series data updated?
+        updatedDrift = false  % Is calculated drift updated?
     end
     
     %% events
     events
-        fileChanged
+        fileChanged % The filename has been changed, so things need updating
     end
     
     %% methods
     methods
         %% Class constructor:
         function tc = timeCapture(filename)
+           % Constructor creates object from filename
+           
             % Listen to whether file has changed:
             addlistener(tc,'fileChanged',@tc.fileChangedHandler);
             
