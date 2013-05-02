@@ -484,8 +484,34 @@ measmnts{end}.Mf = 1e6 / 5.49; % Phi0/A
 measmnts{end}.dVFLLdPhiA = [NaN, 0.5530, NaN, NaN]; % V/Phi_0 in readout
 % Properties of measurement loop:
 measmnts{end}.Rc = 0.453; % ohms
-% Properties of measurement SQUID(s):
+% Properties of measured SQUID(s):
 measmnts{end}.MB = 1e6./[NaN NaN NaN NaN 1417.0 NaN]; % Phi0/A
+
+%% Al + SiNx (SGS-B&D):
+measmnts{end+1}.runName = 'SGS-BD'; % 
+measmnts{end}.startDate = [2013 04 25];
+measmnts{end}.stopDate =  [2013 04 29];
+% Properties of measuring SQUID:
+measmnts{end}.Mi = 1e6 / 0.193; % Phi0/A
+measmnts{end}.Mf = 1e6 / 5.49; % Phi0/A
+measmnts{end}.dVFLLdPhiA = [NaN, 0.5530, NaN, NaN]; % V/Phi_0 in readout
+% Properties of measurement loop:
+measmnts{end}.Rc = 0.453; % ohms
+% Properties of measured SQUID(s):
+measmnts{end}.MB = 1e6./[1223.7 1231.8 1228.4 NaN 1290.1 NaN]; % Phi0/A
+
+%% Al + SiNx (SGS-A&C):
+measmnts{end+1}.runName = 'SGS-AC'; % 
+measmnts{end}.startDate = [2013 04 30];
+measmnts{end}.stopDate =  [2013 05 07];
+% Properties of measuring SQUID:
+measmnts{end}.Mi = 1e6 / 0.193; % Phi0/A
+measmnts{end}.Mf = 1e6 / 5.49; % Phi0/A
+measmnts{end}.dVFLLdPhiA = [NaN, 0.5530, NaN, NaN]; % V/Phi_0 in readout
+% Properties of measurement loop:
+measmnts{end}.Rc = 0.453; % ohms
+% Properties of measured SQUID(s):
+measmnts{end}.MB = 1e6./[1282.8 1269.7 1269.5 NaN 1412.4 NaN]; % Phi0/A
 
 %% Match measurement profile to given date:
 

@@ -1,5 +1,4 @@
 function fileDtbs = spectraFilesDatabase(runName)
-
 % Function creates a list of folders that contain all the relevant time
 % captures corresponding to 'runName'. In addition, folders to exclude from
 % the main data (for instance, time captures taking for troubleshooting or
@@ -109,7 +108,7 @@ switch upper(runName)
       toAdd{end+1} = fullfile(dataFold,'NIST3_c1');
       toSub{end+1} = '2012-07-07 200mK\SQUID3_025f_1';
    case {'E543A'}
-      toAdd{end+1} = fullfile(dataFold,'e543B');
+      toAdd{end+1} = fullfile(dataFold,'e543A');
    case {'E543B'}
       toAdd{end+1} = fullfile(dataFold,'e543B');
    case {'E544A'}
@@ -126,6 +125,10 @@ switch upper(runName)
       toAdd{end+1} = fullfile(dataFold,'SiNx_topbot');
    case {'EPIAL_SINX'}
       toAdd{end+1} = fullfile(dataFold,'epiAl_SiNx');
+   case {'SGS-BD'}
+      toAdd{end+1} = fullfile(dataFold,'SGS-BD');
+   case {'SGS-AC'}
+      toAdd{end+1} = fullfile(dataFold,'SGS-AC');
    otherwise
       disp('Unrecognized run name. Be sure to add the run to spectraFilesDatabase.')
       error('Unrecognized run name.')

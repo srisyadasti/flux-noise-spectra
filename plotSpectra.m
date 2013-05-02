@@ -1,7 +1,11 @@
-function [tcM tcMall] = plotSpectra(tcMall)
+function [tcM, tcMall] = plotSpectra(tcMall)
+% Function plots a specified subset of spectra from tcMall.
+
+% I usually change the run configuration to run this instead:
+%   if exist('tcMall','var'), [tcM tcMall] = plotSpectra(tcMall); end
 
 % Check that tcMall is specified:
-error(nargchk(1, 1, nargin))
+narginchk(1, 1)
 
 % tcMall should be an array of objects of type tcMeas:
 assert(isa(tcMall,'tcMeas'));
@@ -17,10 +21,10 @@ assert(length([tcM.flux]) == length(tcM));
 assert(length([tcM.vout]) == length(tcM));
 assert(length([tcM.fMax]) == length(tcM));
 assert(length([tcM.SQUID]) == length(tcM));
-% assert(length([tcM.totalTime]) == length(tcM)); % This line takes forever
+assert(length([tcM.tcFileSize]) == length(tcM));
 assert(length([tcM.startTime])/6 == length(tcM));
 
-%% Pick time captures for tcM:
+%% Pick time captures run for tcM:
 
 % cellStrToInd = @(cellStr,str) ...
 %     cellfun(@(x) ~isempty( strfind(x,str) ), cellStr);
@@ -56,14 +60,16 @@ assert(length([tcM.startTime])/6 == length(tcM));
 % tcM = tcM(cellStrToInd({tcMall.runName},'P77B'));
 % tcM = tcM(cellStrToInd({tcMall.runName},'SiNx_bot'));
 % tcM = tcM(cellStrToInd({tcMall.runName},'SiNx_topbot'));
-tcM = tcM(cellStrToInd({tcMall.runName},'epiAl_SiNx'));
-
-% tcM = tcM((cellStrToInd({tcMall.runName},'NIST1_c4') & [tcM.SQUID] == 5)| ...
-%     (cellStrToInd({tcMall.runName},'MIT5C3_c1') & [tcM.SQUID] == 6));
+% tcM = tcM(cellStrToInd({tcMall.runName},'epiAl_SiNx'));
+% tcM = tcM(cellStrToInd({tcMall.runName},'SGS-BD'));
 
 % tcM = tcM(~cellfun(@isempty,strfind({tcM.filename},'junk')));
 
-tcM = tcM([tcM.T] == 0.2);
+%% Pick time captures run for tcM:
+
+tcM = tcM([tcM.tcFileSize] > 20e6); % tc filesize greater than 50MB
+
+% tcM = tcM([tcM.T] == 0.4);
 % tcM = tcM([tcM.T] >= 1.4 & [tcM.T] <= 3);
 
 tcM = tcM(~[tcM.fluxModOn]);
@@ -74,13 +80,13 @@ tcM = tcM([tcM.flux] ~= 0 & ~isnan([tcM.flux]) & [tcM.vout]>0 & ...
 % tcM = tcM([tcM.flux] == 0);
 % tcM = tcM([tcM.flux] == 0 | [tcM.SQUID] == 0);
 
-tcM = tcM([tcM.fMax] <= 400);
+tcM = tcM([tcM.fMax] < 400);
 % tcM = tcM([tcM.fMax] < 400 | [tcM.SQUID] == 0);
 % tcM = tcM([tcM.fMax] > 1000);
 
-% tcM = tcM([tcM.SQUID] == 0 | [tcM.SQUID] == 1);
+% tcM = tcM([tcM.SQUID] == 3 | [tcM.SQUID] == 5);
 % tcM = tcM([tcM.SQUID] ~= 2 & [tcM.SQUID] ~= 100);
-% tcM = tcM([tcM.SQUID] == 5);
+tcM = tcM([tcM.SQUID] == 1);
 tcM = tcM([tcM.SQUID] < 10);
 
 % tcM = tcM(abs([tcM.R] - 2.5) < 0.1);
@@ -94,13 +100,13 @@ avgOn = false;
 % avgOn = true;
 
 fitOn = false;
-fitOn = true;
+% fitOn = true;
 
-fMin = 0.01;
-% fMax = 375;
-fMax = 1e3;
+fMin = 0.0;
+fMax = 375;
+% fMax = 1e3;
 enforceWN = true;
-fitLorentz = false;
+fitLorentz = true;
 labelFields = {'T','SQUID','flux','R'};
 
 %% Condition plotting parameters:
@@ -127,7 +133,7 @@ for i = 1:length(tcM)
 end
 
 %% Combine spectra if averaging:
-spectraProps = [[tcM.T]', [tcM.SQUID]', [tcM.flux]', [tcM.fMax]'];
+spectraProps = [[tcM.T]', [tcM.SQUID]', [tcM.flux]', [tcM.fMax]', [tcM.R]'];
 spectraToPlot = spectrum.empty(0,0);
 
 if avgOn

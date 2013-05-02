@@ -63,6 +63,12 @@ for i=1:length(runNames)
          tcMall(ind('\2013-02-22 100mK\SQUID5_025f_4.')).tcS.tMax = 44*60;
          tcMall(ind('\2013-02-22 100mK\SQUID5_0125f_3.')).tcS.tMin = 17*60;
          tcMall(ind('\2013-02-25 200mK\SQUID5_025f_3.')).tcS.tMin = 17*60;
+      case 'SGS-BD'
+         tcMall(ind('\2013-04-28 400mK\SQUID2_025f_1.')).tcS.tMin = 20*60;
+      case 'SGS-AC'
+         tcMall(ind('\2013-05-01 100mK\SQUID3_025f_1.')).tcS.tMin = 2*60;
+         tcMall(ind('\2013-05-01 100mK\SQUID1_025f_3.')).tcS.tMin = 70*60;
+         tcMall(ind('\2013-05-01 100mK\SQUID1_025f_3.')).tcS.tMax = 320*60;
       otherwise
    end
 end

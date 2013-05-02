@@ -1,4 +1,12 @@
 function secondSpectrum(tcM, varargin)
+% Function plots the second spectrum at f1.
+%
+% Optional parameters:
+%  f1          Frequency at which to compute/plot second spectrum
+%  nAvgs1      Number of averages used to compute the first spectrum
+%  nAvgs2      Number of averages used to compute the second spectrum
+%  sumOctave   Optionally compute the second spectrum over an octave,
+%                 rather than at a single frequency f1
 
 % Load the time series data:
 tc = tcM.tcS.tc;
@@ -106,7 +114,8 @@ end
 dt2 = length(y)*dt1/nAvgs1;
 
 subplot(3,1,2)
-semilogy((0:nAvgs1-1)*dt2/3600, S1)
+% semilogy((0:nAvgs1-1)*dt2/3600, S1) %--> crashes if length(y)/nAvgs1 isn't power of 2
+semilogy((0:length(S1)-1)*dt2/3600, S1) % This one doesnt
 title('Power spectral density versus time')
 xlabel('Time (hr)')
 ylabel(sprintf('S_\\Phi(%.2g Hz) (\\Phi_0^2/Hz)',f1(fInd)))

@@ -68,8 +68,9 @@ classdef tcMeas < handle
       R2       % Aliased to tcM.sf.R2
       drift    % Aliased to tcM.tcS.drift
       runName  % Aliased to tcM.measProf.runName
+      tcFileSize  % Aliased to tcM.tc.tcFileSize
       totalTime   % Aliased to tcM.tc.totalTime
-      yConvFactor      % = dyUnit / dVfll
+      yConvFactor % dyUnit / dVfll
       yUnitLabel  % Label (unit) of y-axis of spectral density
       filenameTC  % Filename of time capture file
    end
@@ -109,6 +110,9 @@ classdef tcMeas < handle
       
       % Drift of the time capture:
       function drift = get.drift(tcM), drift = tcM.tcS.drift; end
+      
+      % Total time of the time capture:
+      function ans = get.tcFileSize(tcM), ans = tcM.tc.tcFileSize; end
       
       % Total time of the time capture:
       function tot = get.totalTime(tcM), tot = tcM.tc.totalTime; end
