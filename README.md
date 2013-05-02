@@ -7,6 +7,8 @@ Steven M. Anton<br>
 Department of Physics<br>
 UC Berkeley
 
+This tutorial is a work in progress!
+
 Introduction
 ---------------
 
@@ -17,19 +19,29 @@ I've tried to implement each class so that the properties and methods associated
 Class overview
 ---------------
 
-The highest level class that I've implemented (tcMeas.m) corresponds to what I call a single measurement, that is, a single time capture and the context in which that time capture was taken. Properties of this class include things like the time of the measurement, temperature, bias currents, the flux sensitivity measurement, properties of the readout electronics, etc.. The next lowest level class (tcFFT.m) contains properties regarding the computation of the FFT. In general, I would say that the computation of an FFT hardly merits its own class, but in the way in which I compute the FFT involves a decently involved method of stitching multiple FFT's of a varying number of averages, which I felt did not belong in a spectrum class. So in this class I store stitching and averaging information as well as the influence of drift. The next lower level class is the class implementing spectra (spectrum.m), which I discussed above. This class contains information for the FFT (or the second spectrum, if you're interested in calculating that as well). The lowest level class implements time captures (timeCapture.m). The key methods of this last class involve IO of time capture files and a couple plotting routines. Finally, a class (sFit.m) exists that implements a fitting of a spectrum, allowing one to easily adjust fitting parameters, coefficients, fit errors, labels, etc.
+The highest level class that I've implemented (`tcMeas.m`) corresponds to what I call a single measurement, that is, a single time capture and the context in which that time capture was taken. Properties of this class include things like the time of the measurement, temperature, bias currents, the flux sensitivity measurement, properties of the readout electronics, etc. The next lowest level class (`tcFFT.m`) contains properties regarding the computation of the FFT. In general, I would say that the computation of an FFT hardly merits its own class, but in the way in which I compute the FFT involves a decently involved method of stitching multiple FFT's of a varying number of averages, which I felt did not belong in a spectrum class. So in this class I store stitching and averaging information as well as the influence of drift. The next lower level class is the class implementing spectra (`spectrum.m`), which I discussed above. This class contains information for the FFT (or the second spectrum, if you're interested in calculating that as well). The lowest level class implements time captures (`timeCapture.m`). The key methods of this last class involve IO of time capture files and a couple plotting routines. Finally, a class (`sFit.m`) exists that implements a fitting of a spectrum, allowing one to easily adjust fitting parameters, coefficients, fit errors, labels, etc.
 
-It is also worth noting that all of these classes are implemented as handle classes. This Matlab jargon is equivalent to saying that the variable that is returned when one creates a class object is just a pointer to the object in memory. In other words, if I have a handle class myClass with a property 'val', I can create (instantiate) an object (>> A = myClass;) and set the value (>> A.val = 10). I can then make a copy (>> B = A;), but both variables point to the same object so that if I change the value of one (>> B.val = 20;), then the value of the other also changes:
+It is also worth noting that all of these classes are implemented as handle classes. This Matlab jargon is equivalent to saying that the variable that is returned when one creates a class object is just a pointer to the object in memory. In other words, if I have a handle class myClass with a property 'val', I can create (instantiate) an object (`>> A = myClass;`) and set the value (`>> A.val = 10;`). I can then make a copy (`>> B = A;`), but both variables point to the same object so that if I change the value of one (`>> B.val = 20;`), then the value of the other also changes:
 
+    >> A = myClass;
+    >> A.val = 10;
+    >> A.val
+    ans =
+        10
+    >> B = A;
+    >> B.val
+    ans =
+        10
+    >> B.val = 20;
     >> A.val
     ans =
         20
         
-This implementation is really handy when you want to refer to the data often, but you rarely manipulate it. This way I can have multiple variables pointing to the same measurement without having multiple copies of the measurement, which I don't really need.
+This implementation is really handy when you want to refer to the data often, but you rarely manipulate it. This way I can have multiple variables pointing to the same measurement without having multiple copies of the measurement, which I don't really need and which can take up a lot of memory.
 
 The tcMeas class and its properties, which include the other four classes, contain all the information one would want to know about a single measurement. But when taking data on a single device, we can have a large number of single measurements, for instance measurements acquired at different temperatures. For all the measurements taken on a single device, we create an array of tcMeas objects, `tcMall`. I could have implemented another class for this purpose, but I never really saw much advantage to doing so; an array works just fine. Once we have `tcMall`, we can start to do interesting things with the data. Typically, I use just two high level programs to generate all of the plots that I need. The first, plotSpectra.m, takes `tcMall` as an argument and plots the spectra for a specific subset specified within plotSpectra. By commenting and uncommenting the intro lines in the program, we can rapidly designate exactly which spectra we want to look at. For instance, we can look at the spectra at a single temperature, a range of temperatures, spectra taken at 0.25 Phi0, spectra with a maximum frequency of 400 Hz, spectra corresponding to a specific SQUID, etc. In this program, there is also the ability to control and plot the fits corresponding to these spectra. We can also change units or average spectra that correspond to consecutive measurements.
 
-The second major program that I use is plotFitCoefficients.m. In this program, similar to the last,  one has the ability to select measurements fitting certain criteria and plot the fit coefficients. You can adjust the parameters of the fit routine, such as the minimum fig frequency, right from this program.
+The second major program that I use is plotFitCoefficients.m. In this program, similar to the last, one has the ability to select measurements fitting certain criteria and plot the fit coefficients. You can adjust the parameters of the fit routine, such as the minimum fig frequency, right from this program.
 
 Generally, the coefficients are plotted versus temperature, but you can easily plot versus geometry or SQUID number if you choose.
 
@@ -38,7 +50,7 @@ Adding a new device profile
 
 I've organized my measurements by fridge runs. Each run is given a unique run name for easy reference later on and disambiguation. Since we generally only measure a particular device one time, the run name is often just some description of the device.
 
-To add a new measurement, you have to modify two files. The first is `spectraFilesDatabase.m`. This program contains all the directory information for each run. Open the program and look at the switch statement with a large number of cases. Each case corresponds to a run and instructs the program in which folders it should recursively look for time captures corresponding to that run and which folders it should exclude from its search. The syntax is similar between runs, so copy the last run and paste it at the end. Change the run name (case {runName}) to whatever you've called the current run and then add the folder name where the data is stored to the toAdd statement. If there's any folder you want to exclude, like "\crap_data", then add that with a `toSub` line:
+To add a new measurement, you have to modify two files. The first is `spectraFilesDatabase.m`. This program contains all the directory information for each run. Open the program and look at the switch statement with a large number of cases. Each case corresponds to a run and instructs the program in which folders it should recursively look for time captures corresponding to that run and which folders it should exclude from its search. The syntax is similar between runs, so copy the last run and paste it at the end. Change the run name (`case {runName}`) to whatever you've called the current run and then add the folder name where the data is stored to the toAdd statement. If there's any folder you want to exclude, like "\crap_data", then add that with a `toSub` line:
 
     toSub{end+1} = 'crap_data';
     
@@ -46,7 +58,7 @@ The program will also automatically remove anything with the words "test" or "tr
 
 The next program to change is `measurementProfile.m`. This program contains all the information regarding calibrated parameters for each run. Such parameters include the mutual inductance of the input and feedback coils, dVFLL/dPhi, the compensating resistance, and the mutual inductances of the measured SQUIDs. It also, importantly, has information about the dates over which the run occurred. The dates are important because they are how the programs know which measurement is which. That is, `tcMeas` calls `measurementProfile` with the start time and date specified in the header file as an input. Then `measurementProfile` searches through all the specified measurement profiles, finds the one that matches the measurement time, and returns the profile corresponding to that time. If you get the dates wrong, the profile won't match up with the measurement. Adding the necessary entry is pretty easy. Assuming you don't change readout SQUIDs, then you just copy the previous entry and change the `runName`, `startDate`, `stopDate`, and the mutual inductances of the measured SQUIDs.
 
-One final optional program exists for modifying the info of time captures, `conditionTCs.m`. Suppose your time capture is just about to finish and the temperature abruptly changes and you get a spike in your data. Most of it's still good, so you don't want to throw away the whole time capture. What you can do is create an entry in `conditionTCs` that specifies a maximum time (tMax) for right before the spike occurs. This entry will instruct the programs to ignore any data that occurs after tMax. You can do something similar for tMin. The syntax should be obvious by looking at the previous runs.
+One final optional program exists for modifying the info of time captures, `conditionTCs.m`. Suppose your time capture is just about to finish and the temperature abruptly changes and you get a spike in your data. Most of it's still good, so you don't want to throw away the whole time capture. What you can do is create an entry in `conditionTCs` that specifies a maximum time (`tMax`) for right before the spike occurs. This entry will instruct the programs to ignore any data that occurs after `tMax`. You can do something similar for tMin. The syntax should be obvious by looking at the previous runs.
 
 Initializing `tcMall`
 ---------------
