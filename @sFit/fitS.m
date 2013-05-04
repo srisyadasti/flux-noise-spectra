@@ -32,8 +32,8 @@ f = f( f>=fMin & f<=fMax);
 sy = S/mean(S);
 syOrig = sy;
 
-% Smoothed data:
-pp = csaps(log(f),log(sy), 0.98);
+% Compute the smoothed data:
+pp = csaps(log(f),log(sy), 0.98); % create smoothed spline from log data
 sy = exp(fnval(pp,log(f)));
 
 %% Set coefficients to fit:
@@ -196,7 +196,7 @@ if fitLorentz
     end
 end
 
-%% Define the function:
+%% Define the function and fit it:
 
 fitGood = false;
 

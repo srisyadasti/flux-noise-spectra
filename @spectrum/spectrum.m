@@ -149,7 +149,7 @@ classdef spectrum < handle
          s3.SPrivate = S{1} .* S{2};
       end
       
-      function s3 = mean(varargin)
+      function sOut = mean(varargin)
          % Function will calculate the mean of the input spectra.
          if length(varargin{1}) > 1
             spectra = varargin{1};
@@ -157,10 +157,13 @@ classdef spectrum < handle
             spectra = [varargin{:}];
          end
          
-         s3 = spectrum;
+         sOut = spectrum;
          for i = 1:length(spectra)
-            s3 = s3 + spectra(i);
+            sOut = sOut + spectra(i);
          end
+         % We don't have to divide by length(spectra) because plus doesn't
+         % really add the spectra, it combines them. That is, s1 + s1 =
+         % mean(s1,s2).
       end
       
    end

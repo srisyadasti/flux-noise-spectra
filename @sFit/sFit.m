@@ -34,6 +34,7 @@ classdef sFit < handle
             % Spectrum object is specified:
             if nargin == 1
                 assert(isa(s,'spectrum'));
+                % Set the spectrum in sf to the input spectrum:
                 sf.s = s;
             end
             
@@ -42,8 +43,7 @@ classdef sFit < handle
             addlistener(sf,'fMax',      'PostSet',@sf.updateFitFalse);
             addlistener(sf,'fitLog',    'PostSet',@sf.updateFitFalse);
             addlistener(sf,'enforceWN', 'PostSet',@sf.updateFitFalse);
-            addlistener(sf,'fitLorentz','PostSet',@sf.updateFitFalse);
-            
+            addlistener(sf,'fitLorentz','PostSet',@sf.updateFitFalse);            
             
             % Properties that require updated fit:
             addlistener(sf,'coeff',    'PreGet',@sf.updateFit);
@@ -62,7 +62,7 @@ classdef sFit < handle
         % Something is requesting a parameter that needs an updated fit:
         function updateFit(sf, varargin)
             if ~sf.updatedFit
-                fitS(sf);
+                fitS(sf); % fit the spectrum in sf (i.e. sf.s)
                 sf.updatedFit = true;
             end
         end

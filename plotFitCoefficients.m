@@ -33,12 +33,9 @@ enforceWN = true;
 
 avgOn = false;
 
-f0 = 1;
+f0 = 1; % A^2 = S_Phi(f0)
 
 %% Pick time captures for tcM:
-
-cellStrToInd = @(cellStr,str) ...
-    cellfun(@(x) ~isempty( strfind(x,str) ), cellStr);
 
 % Choose the run:
 % tcM = tcM(cellStrToInd({tcMall.runName},'NIST1_c1'));
@@ -73,6 +70,7 @@ cellStrToInd = @(cellStr,str) ...
 % tcM = tcM(cellStrToInd({tcMall.runName},'SiNx_topbot'));
 % tcM = tcM(cellStrToInd({tcMall.runName},'epiAl_SiNx'));
 % tcM = tcM(cellStrToInd({tcMall.runName},'SGS-BD'));
+tcM = tcM(cellStrToInd({tcMall.runName},'SGS-AC'));
 
 % tcM = tcMall(cellStrToInd({tcMall.runName},'NIST1_c1') | ...
 %     cellStrToInd({tcMall.runName},'NIST1_c4'));
@@ -119,12 +117,10 @@ tcM = tcM([tcM.fMax] == 400);
 % tcM = tcM(~([tcM.SQUID] == 4 & [tcM.T] == 0.1 & [tcM.R] ~= 5.01 & ...
 %     strcmp({tcM.runName},'NIST1_c1')));
 
-%% Device specific removals:
+%% Remove crap time captures:
 
 tcM = tcM( ~(strcmp({tcM.runName},'NIST1_c4') & [tcM.T] <= 1.5) );
 tcM = tcM( ~(strcmp({tcM.runName},'NIST1_c4') & [tcM.SQUID] == 1) );
-
-%% Remove crap time captures:
 
 % White noise is all messed up:
 tcM = tcM(~(([tcM.SQUID] == 2 | [tcM.SQUID] == 5 | [tcM.SQUID] == 6) & ...
@@ -159,8 +155,9 @@ if length(runNames) == 1
         case 'MIT5B3_c1'
             RW = [12 6 3 1.5 1.5 1.5]/0.5;
         case 'MIT5C3_c1'
-            RW = [370/160, 210/80, 130/40, 90/20, 65/10, 50/5]/2;
+            R = [24 12 6 3 1.5 1.5];
             W = [8 4 2 1 0.5 0.5];
+            RW = R./W;
             logW = log10(W);
         case 'Chris1_c1'
             RW = ones(6,1) * 5/3;
@@ -184,8 +181,6 @@ end
 
 for i = 1:length(tcM)
     
-    tcM(i).s.noNoise = true;
-    tcM(i).sf.updatedFit = false;
     
     if  any([tcM.flux] == 0) || any(isnan([tcM.flux]))
         tcM(i).yUnit = 'Ii';
@@ -211,17 +206,16 @@ for i = 1:length(tcM)
         end
     end
     
-%     tcM(i).sf.fMin = fMin;
-    if tcM(i).sf.fMax == inf
-        tcM(i).sf.fMax = fMax;
-    end
+    tcM(i).s.noNoise = true;
+    tcM(i).sf.fMin = fMin;
+    tcM(i).sf.fMax = fMax;
     tcM(i).sf.fitLorentz = fitLorentz;
     tcM(i).sf.enforceWN = enforceWN;   
     tcM(i).sf.updatedFit = false;
 end
 
-coeff = [tcM.coeff];
-coeff = reshape(coeff,6,length(coeff)/6)';
+coeff = vertcat(tcM.coeff);
+% coeff = reshape(coeff,6,length(coeff)/6)';
 % coeff(coeff == 0) = NaN;
 
 T = [tcM.T]';
@@ -230,6 +224,8 @@ C2 = coeff(:,1);
 gam = coeff(:,2);
 A2 = coeff(:,3);
 alph = coeff(:,4);
+% Lamp = coeff(:,5);
+% Lfreq = coeff(:,6);
 
 % Struct to export:
 tcMinfo = struct('runName',runNames, 'T',T, 'SQUID',SQUID, 'C2',C2, ...
@@ -238,15 +234,17 @@ tcMinfo = struct('runName',runNames, 'T',T, 'SQUID',SQUID, 'C2',C2, ...
 if exist('RW',  'var'), tcMinfo.RW   = RW;   end
 if exist('logW','var'), tcMinfo.logW = logW; end
 
-if false % remove spectra with high white noise:
-    inds = C2*1e12 < 0.1 + [tcM.T]'/5;
-    T = T(inds);
-    SQUID = SQUID(inds);
-    C2 = C2(inds);
-    gam = gam(inds);
-    A2 = A2(inds);
-    alph = alph(inds);
-end
+%% Ghetto hack that I used once but never again:
+
+% if false % remove spectra with high white noise:
+%     inds = C2*1e12 < 0.1 + [tcM.T]'/5;
+%     T = T(inds);
+%     SQUID = SQUID(inds);
+%     C2 = C2(inds);
+%     gam = gam(inds);
+%     A2 = A2(inds);
+%     alph = alph(inds);
+% end
 
 %% Determine x-axis:
 
@@ -296,6 +294,7 @@ switch xAxis
         xlabelStr = 'T [K]';
         [b, ~, n] = unique(SQUID);
         xAxisScale = 'log';
+        % xAxisScale = 'linear';
 end
 
 switch xAxisScale
@@ -338,18 +337,18 @@ for i = 1:length(b)
     
     % Plot A:
     subplot(2,2,1)
-    plotYlog(xToPloti, A2i*1e12.*f0.^-alphi, '.-','color',colors(i,:),...
-        'MarkerSize',10)
-    hold on
-    xlabel(xlabelStr), ylabel('A^2 [(\mu\Phi_0)^2/Hz]')
+%     plotYlog(xToPloti, A2i*1e12.*f0.^-alphi, '.-','color',colors(i,:),...
+%         'MarkerSize',10)
+%     hold on
+%     xlabel(xlabelStr), ylabel('A^2 [(\mu\Phi_0)^2/Hz]')
     
     % Plot <Phi^2>
-%     plotYlog(xToPloti, A2i*1e12.*(10.^(9*(1-alphi))...
-%     -10.^(-4.*(1-alphi)))./(1-alphi), '.-','color',colors(i,:),...
-%          'MarkerSize',10)
-%     hold on
-%     xlabel(xlabelStr), ylabel('\langle\Phi^2\rangle [(\mu\Phi_0)^2]')
-%     continue
+    plotYlog(xToPloti, A2i*1e12.*(10.^(9*(1-alphi))...
+    -10.^(-4.*(1-alphi)))./(1-alphi), '.-','color',colors(i,:),...
+         'MarkerSize',10)
+    hold on
+    xlabel(xlabelStr), ylabel('\langle\Phi^2\rangle [(\mu\Phi_0)^2]')
+    continue
     
     % Plot alpha:
     subplot(2,2,2)
@@ -382,57 +381,55 @@ end
 
 title(sprintf('f_{min} = %g, f_{max} = %g',fMin,fMax))
 
-return
+end
 
 %% Average like spectra:
 
-plotAverage = false;
-
-[b, m, n] = unique([[tcM.T]', [tcM.SQUID]'],'rows');
-
-s = spectrum.empty(length(m),0);
-sf = sFit.empty(length(m),0);
-
-if plotAverage, colors = lines(length(m)); figure, end
-Rsq = zeros(length(m),1);
-for i = 1:length(m)
-    s(i) = mean(tcM(n==i));
-    s(i).noNoise = true;
-    sf(i) = sFit(s(i));
-    
-%     sf(i).fMin = fMin;
-%     sf(i).fMax = fMax;
-    sf(i).fitLorentz = fitLorentz;
-    sf(i).enforceWN = enforceWN;    
-    
-    if plotAverage
-        plot(s(i),'Color',colors(i,:))
-        hold on
-        plot(sf(i),'Color',colors(i,:))
-    end
-    
-    % Calculate R^2:
-    temp = (sf(i).SyFit.S - sf(i).s.S).^2;
-    Rsq(i) = sum(temp(fMin <= s(i).f & s(i).f <= fMax));
-end
-% xlim([fMin fMax])
-
-coeffAvg = reshape([sf.coeff],6,length(sf))';
-
-figure
-colors = lines(6);
-for i=1:6
-    plot( b(b(:,2)==i,1), coeffAvg(b(:,2)==i,3), '-o', 'color', colors(i,:))
-    hold on
-end
-
-figure
-colors = lines(6);
-for i=1:6
-    plot( b(b(:,2)==i,1), coeffAvg(b(:,2)==i,4), '-o', 'color', colors(i,:))
-    hold on
-end
-
-return
-
-end
+% plotAverage = false;
+% 
+% [b, m, n] = unique([[tcM.T]', [tcM.SQUID]'],'rows');
+% 
+% s = spectrum.empty(length(m),0);
+% sf = sFit.empty(length(m),0);
+% 
+% if plotAverage, colors = lines(length(m)); figure, end
+% Rsq = zeros(length(m),1);
+% for i = 1:length(m)
+%     s(i) = mean(tcM(n==i));
+%     s(i).noNoise = true;
+%     sf(i) = sFit(s(i));
+%     
+% %     sf(i).fMin = fMin;
+% %     sf(i).fMax = fMax;
+%     sf(i).fitLorentz = fitLorentz;
+%     sf(i).enforceWN = enforceWN;    
+%     
+%     if plotAverage
+%         plot(s(i),'Color',colors(i,:))
+%         hold on
+%         plot(sf(i),'Color',colors(i,:))
+%     end
+%     
+%     % Calculate R^2:
+%     temp = (sf(i).SyFit.S - sf(i).s.S).^2;
+%     Rsq(i) = sum(temp(fMin <= s(i).f & s(i).f <= fMax));
+% end
+% % xlim([fMin fMax])
+% 
+% coeffAvg = reshape([sf.coeff],6,length(sf))';
+% 
+% figure
+% colors = lines(6);
+% for i=1:6
+%     plot( b(b(:,2)==i,1), coeffAvg(b(:,2)==i,3), '-o', 'color', colors(i,:))
+%     hold on
+% end
+% 
+% figure
+% colors = lines(6);
+% for i=1:6
+%     plot( b(b(:,2)==i,1), coeffAvg(b(:,2)==i,4), '-o', 'color', colors(i,:))
+%     hold on
+% end
+% 
+% return

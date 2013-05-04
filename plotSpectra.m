@@ -62,6 +62,7 @@ assert(length([tcM.startTime])/6 == length(tcM));
 % tcM = tcM(cellStrToInd({tcMall.runName},'SiNx_topbot'));
 % tcM = tcM(cellStrToInd({tcMall.runName},'epiAl_SiNx'));
 % tcM = tcM(cellStrToInd({tcMall.runName},'SGS-BD'));
+tcM = tcM(cellStrToInd({tcMall.runName},'SGS-AC'));
 
 % tcM = tcM(~cellfun(@isempty,strfind({tcM.filename},'junk')));
 
@@ -76,11 +77,11 @@ tcM = tcM(~[tcM.fluxModOn]);
 
 tcM = tcM([tcM.flux] ~= 0 & ~isnan([tcM.flux]) & [tcM.vout]>0 & ...
     [tcM.vin]>0);
-% tcM = tcM([tcM.flux] == 0.25);
+tcM = tcM([tcM.flux] == 0.25);
 % tcM = tcM([tcM.flux] == 0);
 % tcM = tcM([tcM.flux] == 0 | [tcM.SQUID] == 0);
 
-tcM = tcM([tcM.fMax] < 400);
+tcM = tcM([tcM.fMax] == 400);
 % tcM = tcM([tcM.fMax] < 400 | [tcM.SQUID] == 0);
 % tcM = tcM([tcM.fMax] > 1000);
 
@@ -97,10 +98,10 @@ tcM = tcM([tcM.SQUID] < 10);
 % tcM = tcM(abs([tcM.totalTime] - 800) < 1); % Only hour-long captures
 
 avgOn = false;
-% avgOn = true;
+avgOn = true;
 
 fitOn = false;
-% fitOn = true;
+fitOn = true;
 
 fMin = 0.0;
 fMax = 375;
@@ -119,9 +120,9 @@ for i = 1:length(tcM)
     else
         tcM(i).yUnit = 'phi';
     end
-%     tcM(i).yUnit = 'Ii';
-%     tcM(i).yUnit = 'phia';
-%     tcM(i).yUnit = 'vfll';
+%     tcM(i).yUnit = 'Ii';   % current in the big loop (input coil)
+%     tcM(i).yUnit = 'phia'; % flux in readout SQUID
+%     tcM(i).yUnit = 'vfll'; % flux-locked loop voltage
     
     tcM(i).tcS.s.noNoise = true;
 %     tcM(i).sf.updatedFit = false;
@@ -152,7 +153,7 @@ end
 
 if fitOn
     fitLegends = cell(length(nInd),1);
-    legendHandles = zeros(length(nInd),1);
+    fitHandles = zeros(length(nInd),1);
 end
 
 dataHandles = zeros(length(nInd),1);
@@ -178,11 +179,10 @@ for i = 1:length(spectraToPlot)
         sf.fitLorentz = fitLorentz;
         sf.enforceWN = enforceWN;
         
-        fitPlot = plot(sf,'Color',colors(i,:));
+        fitHandles(i) = plot(sf,'Color',colors(i,:));
         fitLegends{i} = sprintf('%s', sf.legendStr);
         
         % if ~avgOn, tcM(i).sf = sf; end
-        legendHandles(i) = fitPlot;
     end
 end
 
@@ -220,9 +220,9 @@ dataLegends = dataLegends(1:length(nInd));
 % Insert legend:
 if fitOn
     if isempty(dataLegends{1})
-        legend(legendHandles, fitLegends)
+        legend(fitHandles, fitLegends)
     else
-        legend(legendHandles, strcat(dataLegends, ...
+        legend(fitHandles, strcat(dataLegends, ...
             repmat({', '},size(fitLegends)), fitLegends))
     end
 else
